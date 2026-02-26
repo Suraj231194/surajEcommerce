@@ -69,4 +69,4 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 # ENV DATABASE_URL "file:./dev.db"
 
-CMD ["/bin/sh", "-c", "npx prisma@5.17.0 migrate deploy && node server.js"]
+CMD ["node", "server.js"]

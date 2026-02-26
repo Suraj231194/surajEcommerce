@@ -89,7 +89,18 @@ jobs:
                 -e POSTGRES_DB=surajhub \
                 -v postgres_data:/var/lib/postgresql/data \
                 postgres:15-alpine
+                
+              echo "Waiting for PostgreSQL to initialize..."
+              sleep 10
             fi
+            
+            echo "Running database migrations..."
+            docker run --rm \
+              --network surajhub-net \
+              --user root \
+              -e DATABASE_URL=postgresql://postgres:postgres@surajhub-postgres:5432/surajhub?schema=public \
+              $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+              npx prisma@5.17.0 migrate deploy
             
             # Run new container
             docker run -d \
