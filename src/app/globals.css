@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --button-outline: rgba(15, 23, 42, 0.1);
+  --badge-outline: rgba(15, 23, 42, 0.05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(15, 23, 42, 0.04);
+  --elevate-2: rgba(15, 23, 42, 0.08);
+
+  --background: 36 38% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 216 91% 42%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 214 32% 95%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 28% 94%;
+  --muted-foreground: 215 18% 38%;
+  --accent: 41 100% 90%;
+  --accent-foreground: 24 85% 28%;
+  --destructive: 0 78% 54%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 26% 88%;
+  --input: 214 26% 88%;
+  --ring: 216 91% 42%;
+
+  --chart-1: 216 91% 42%;
+  --chart-2: 18 88% 55%;
+  --chart-3: 172 65% 36%;
+  --chart-4: 262 63% 56%;
+  --chart-5: 338 72% 50%;
+
+  --radius: 0.95rem;
+
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
+}
+
+.dark {
+  --button-outline: rgba(255, 255, 255, 0.12);
+  --badge-outline: rgba(255, 255, 255, 0.08);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.06);
+  --elevate-2: rgba(255, 255, 255, 0.1);
+
+  --background: 222 42% 8%;
+  --foreground: 210 40% 98%;
+  --card: 222 32% 11%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 32% 11%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 214 90% 63%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 216 20% 18%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 216 20% 16%;
+  --muted-foreground: 215 20% 72%;
+  --accent: 24 60% 24%;
+  --accent-foreground: 40 94% 90%;
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 216 16% 21%;
+  --input: 216 16% 21%;
+  --ring: 214 90% 63%;
+}
+
+@keyframes float-slow {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes cart-bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body), "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background-image: radial-gradient(
+        circle at 15% 0%,
+        rgba(255, 180, 60, 0.08),
+        transparent 42%
+      ),
+      radial-gradient(circle at 90% 10%, rgba(37, 99, 235, 0.1), transparent 36%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-display), "Times New Roman", serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto w-full max-w-7xl px-4 md:px-6;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-border/80 bg-card/95 shadow-sm backdrop-blur;
+  }
+
+  .surface-card-strong {
+    @apply rounded-2xl border border-border/80 bg-card shadow-xl shadow-slate-900/5;
+  }
+
+  .section-title {
+    @apply text-2xl font-semibold tracking-tight md:text-3xl;
+  }
+
+  .section-subtitle {
+    @apply mt-2 max-w-2xl text-sm text-muted-foreground md:text-base;
+  }
+
+  .soft-shimmer {
+    background-image: linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0) 20%,
+      rgba(255, 255, 255, 0.45) 50%,
+      rgba(255, 255, 255, 0) 80%
+    );
+    background-size: 220% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+}
+
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  .cart-bump {
+    animation: cart-bump 0.42s ease;
+  }
+
+  .fly-cart-token {
+    position: fixed;
+    z-index: 80;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.62s ease;
+  }
+
+  .bg-grid-dots {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(15, 23, 42, 0.09) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .toggle-elevate.toggle-elevated {
+    background-color: var(--elevate-2);
+  }
+
+  .hover-elevate,
+  .hover-elevate-2,
+  .active-elevate,
+  .active-elevate-2 {
+    transition: filter 0.2s ease, transform 0.2s ease;
+  }
+
+  .hover-elevate:hover,
+  .active-elevate:active {
+    filter: brightness(0.98);
+  }
+
+  .hover-elevate-2:hover,
+  .active-elevate-2:active {
+    filter: brightness(0.95);
+  }
+}

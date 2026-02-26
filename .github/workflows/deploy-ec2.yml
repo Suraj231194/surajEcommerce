@@ -1,0 +1,107 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: surajhub
+  CONTAINER_NAME: surajhub-container
+
+jobs:
+  build-and-push:
+    name: Build and Push
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build-image.outputs.image_tag }}
+      registry: ${{ steps.login-ecr.outputs.registry }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy-to-ec2:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_REGISTRY: ${{ needs.build-and-push.outputs.registry }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: AWS_REGION,ECR_REPOSITORY,CONTAINER_NAME,ECR_REGISTRY,IMAGE_TAG
+          script: |
+            # Login to ECR
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+            
+            # Pull new image
+            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            
+            # Stop and remove old container
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+            
+            # Create network if not exists
+            docker network create surajhub-net || true
+
+            # Start Postgres if not running
+            if [ ! "$(docker ps -q -f name=surajhub-postgres)" ]; then
+              if [ "$(docker ps -aq -f name=surajhub-postgres)" ]; then
+                docker rm surajhub-postgres
+              fi
+              docker run -d \
+                --name surajhub-postgres \
+                --network surajhub-net \
+                --restart always \
+                -e POSTGRES_USER=postgres \
+                -e POSTGRES_PASSWORD=postgres \
+                -e POSTGRES_DB=surajhub \
+                -v postgres_data:/var/lib/postgresql/data \
+                postgres:15-alpine
+            fi
+            
+            # Run new container
+            docker run -d \
+              --name $CONTAINER_NAME \
+              --network surajhub-net \
+              -p 3000:3000 \
+              --restart always \
+              -e DATABASE_URL=postgresql://postgres:postgres@surajhub-postgres:5432/surajhub?schema=public \
+              -e JWT_SECRET=supersecretkey \
+              -e NEXT_TELEMETRY_DISABLED=1 \
+              -e HOSTNAME=0.0.0.0 \
+              $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            
+            # Cleanup unused images
+            docker image prune -f
